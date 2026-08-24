@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Costco Calculator</title>
+  <style>
+    :root {
+      --costco-blue: #005DAA;
+      --costco-red: #E31837;
+      --costco-gray: #f4f5f7;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #1a1a1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .calculator {
+      background: white;
+      width: 100%;
+      max-width: 380px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      border: 3px solid var(--costco-blue);
+    }
+    .header {
+      background: var(--costco-blue);
+      color: white;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+    }
+    .badge {
+      background: var(--costco-red);
+      font-size: 0.7rem;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .screen {
+      background: #eef2f5;
+      padding: 16px;
+      text-align: right;
+      border-bottom: 2px solid #ddd;
+    }
+    .history {
+      font-size: 0.85rem;
+      color: #666;
+      min-height: 1.2rem;
+      word-wrap: break-word;
+    }
+    .result {
+      font-size: 2.2rem;
+      font-weight: bold;
+      color: #222;
+      margin-top: 4px;
+    }
+    .receipt-msg {
+      font-size: 0.75rem;
+      color: var(--costco-red);
+      font-weight: bold;
+      min-height: 1rem;
+      margin-top: 4px;
+    }
+    .quick-items {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      padding: 10px 12px;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+    }
+    .quick-btn {
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-weight: 600;
+      color: #333;
+    }
+    .quick-btn:hover {
+      background: #f0f4f8;
+      border-color: var(--costco-blue);
+    }
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 12px;
+    }
+    button.key {
+      padding: 16px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      background: #f0f0f0;
+      color: #222;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    button.key:active {
+      transform: scale(0.97);
+    }
+    button.op {
+      background: #e3ebf3;
+      color: var(--costco-blue);
+    }
+    button.checkout {
+      background: var(--costco-red);
+      color: white;
+      grid-column: span 2;
+    }
+  </style>
+</head>
+<body>
+
+<div class="calculator">
+  <div class="header">
+    <h1>COSTCO MATH</h1>
+    <span class="badge">Exec Member</span>
+  </div>
+
+  <div class="screen">
+    <div class="history" id="history">&nbsp;</div>
+    <div class="result" id="display">0</div>
+    <div class="receipt-msg" id="msg"></div>
+  </div>
+
+  <div class="quick-items">
+    <button class="quick-btn" onclick="addBulk('🍗 Rotisserie Chicken', 4.99)">+ Chicken ($4.99)</button>
+    <button class="quick-btn" onclick="addBulk('🧻 Paper Towels (64pk)', 24.99)">+ Paper Towels ($24.99)</button>
+    <button class="quick-btn" onclick="addBulk('🌭 Hot Dog Combo', 1.50)">+ Hot Dog ($1.50)</button>
+    <button class="quick-btn" onclick="addBulk('📺 85-in OLED TV', 1899.99)">+ 85" TV ($1,899.99)</button>
+  </div>
+
+  <div class="keypad">
+    <button class="key op" onclick="clearCalc()">AC</button>
+    <button class="key op" onclick="inputOp('/')">÷</button>
+    <button class="key op" onclick="inputOp('*')">×</button>
+    <button class="key op" onclick="inputOp('-')">−</button>
+
+    <button class="key" onclick="inputNum('7')">7</button>
+    <button class="key" onclick="inputNum('8')">8</button>
+    <button class="key" onclick="inputNum('9')">9</button>
+    <button class="key op" onclick="inputOp('+')">+</button>
+
+    <button class="key" onclick="inputNum('4')">4</button>
+    <button class="key" onclick="inputNum('5')">5</button>
+    <button class="key" onclick="inputNum('6')">6</button>
+    <button class="key" onclick="inputNum('.')">.</button>
+
+    <button class="key" onclick="inputNum('1')">1</button>
+    <button class="key" onclick="inputNum('2')">2</button>
+    <button class="key" onclick="inputNum('3')">3</button>
+    <button class="key" onclick="inputNum('0')">0</button>
+
+    <button class="key checkout" onclick="checkout()">CHECKOUT (=)</button>
+  </div>
+</div>
+
+<script>
+  let expr = '';
+  const excuses = [
+    "Kirkland logic applied: $0.00",
+    "You saved so much you basically broke even.",
+    "Executive 2% cash back absorbed the universe.",
+    "Free samples deducted from grand total.",
+    "Receipt checked at the door: Balance $0.00."
+  ];
+
+  function updateDisplay(val) {
+    document.getElementById('display').innerText = val || '0';
+  }
+
+  function inputNum(n) {
+    expr += n;
+    updateDisplay(expr);
+  }
+
+  function inputOp(op) {
+    if (expr === '') return;
+    expr += ' ' + op + ' ';
+    updateDisplay(expr);
+  }
+
+  function addBulk(name, price) {
+    if (expr !== '' && !expr.endsWith(' ')) expr += ' + ';
+    expr += price;
+    document.getElementById('history').innerText = 'Added ' + name;
+    updateDisplay(expr);
+  }
+
+  function clearCalc() {
+    expr = '';
+    updateDisplay('0');
+    document.getElementById('history').innerHTML = '&nbsp;';
+    document.getElementById('msg').innerText = '';
+  }
+
+  function checkout() {
+    if (!expr) return;
+    document.getElementById('history').innerText = expr + ' =';
+    document.getElementById('display').innerText = '$0.00';
+    const randomExcuse = excuses[Math.floor(Math.random() * excuses.length)];
+    document.getElementById('msg').innerText = randomExcuse;
+    expr = '';
+  }
+</script>
+
+</body>
+</html>
